@@ -1,1242 +1,835 @@
 <!--
-  Rendezvous Planer PWA (Single HTML File) - Modernes, minimalistisches iPhone-Design
-  WICHTIG: Erfordert die Aktivierung von E-MAIL/PASSWORT in der Firebase Authentication!
+  Rendezvous Planer PWA v2.1
+  Features: 
+  - NEW: Categories & Inline Editing for Planned Dates
+  - RESTORED: Original Login, Profile (Heart), and Memory Layout
 -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <!-- Wichtig für PWA/iPhone-Feeling: Festes, nicht skalierbares Layout -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
-
-
-    <!-- Manifest einbinden -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
-
-    <!-- App-Icons -->
     <link rel="icon" type="image/png" href="icon512.png">
-    <link rel="apple-touch-icon" href="icon512.png">
     
     <title>dates</title>
-    <!-- Lucide Icons for modern, crisp vector graphics -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     
     <style>
-        /* --- General Setup & Variables (Beige/White Theme) --- */
+        /* --- General Setup & Variables --- */
         :root {
-            --color-light-bg: #f8f8f8; /* Very light beige/gray - App background */
-            --color-light-surface: #ffffff; /* Pure white - Card/Surface background */
-            --color-navy-accent: #7f4f24; /* Muted Navy/Indigo - Primary accent */
-            --color-text-dark: #333333; /* Dark Gray - Primary text */
-            --color-text-subtle: #737373; /* Medium Gray - Subtle text */
-            --color-success: #10b981; /* Green */
-            --color-danger: #ef4444; /* Red */
+            --color-bg: #f8f8f8; /* Back to slightly warmer/lighter grey */
+            --color-surface: #ffffff;
+            --color-primary: #52a4da; /* Winter Blue Accent */
+            --color-text-main: #333333; 
+            --color-text-muted: #737373; 
+            --color-success: #10b981; 
+            --color-danger: #ef4444; 
+            --radius-md: 16px;
+            --radius-sm: 12px;
+            --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.03);
         }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
-            user-select: none;
-            -webkit-user-select: none; /* Für Safari / iOS */
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--color-light-bg);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
+            user-select: none; -webkit-user-select: none;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--color-bg);
+            margin: 0; padding: 0;
+            display: flex; justify-content: center;
         }
 
-        /* --- App Container (iPhone Viewport Simulation) --- */
+        /* --- App Container --- */
         .app-container {
-            width: 100%;
-            max-width: 450px; /* iPhone Max Width */
-            min-height: 100vh;
-            background-color: var(--color-light-bg);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            color: var(--color-text-dark);
-            overflow: hidden; /* Prevent horizontal scroll */
-        }
-        .header {
-            padding: 0px 20px 10px 20px;
-            background-color: var(--color-light-bg);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        .main-content {
-            flex-grow: 1;
-            padding: 20px 20px 100px 20px; /* Space for the fixed bottom nav */
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
-        }
-        h1 { font-weight: 800; }
-
-        /* --- Form & Inputs (Minimalist) --- */
-        .input-field {
-            width: 90%;
-            padding: 14px 16px;
-            border-radius: 12px;
-            background-color: var(--color-light-surface);
-            border: 1px solid #e0e0e0;
-            color: var(--color-text-dark);
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .input-field::placeholder {
-            color: var(--color-text-subtle);
-        }
-        .input-field:focus {
-            outline: none;
-            border-color: var(--color-navy-accent);
-            box-shadow: 0 0 0 3px rgba(91, 90, 156, 0.1);
-        }
-        .form-group { margin-bottom: 15px; }
-
-        /* --- Buttons (Clean & Rounded) --- */
-        .btn {
-            padding: 14px 20px;
-            border-radius: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
-            border: none;
-        }
-        .btn:active { transform: scale(0.98); }
-
-        .btn-primary {
-            background-color: var(--color-navy-accent);
-            color: var(--color-light-surface);
-            box-shadow: 0 4px 10px rgba(91, 90, 156, 0.3);
-        }
-        .btn-primary:hover { background-color: #6a69b6; }
-        
-        .btn-apple {
-            background-color: #000000;
-            color: var(--color-light-surface);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .btn-secondary {
-            background-color: transparent;
-            color: var(--color-text-dark);
-            border: 1px solid #dcdcdc;
-            box-shadow: none;
-        }
-        .btn-secondary:hover { background-color: #f1f1f1; }
-
-        .btn-danger {
-            background-color: var(--color-danger);
-            color: white;
-        }
-        
-        .btn-transparent-icon {
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-            color: var(--color-text-dark);
-            transition: color 0.2s;
-        }
-        .btn-transparent-icon:hover { color: var(--color-navy-accent); }
-
-        /* --- Event Card (Minimalist) --- */
-        .event-card {
-            background-color: var(--color-light-surface);
-            padding: 18px;
-            border-radius: 16px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            transition: transform 0.15s;
-            cursor: pointer;
-        }
-        .event-card:active { transform: scale(0.99); }
-        .event-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .event-card h3 {
-            margin: 0;
-            font-size: 1.15rem;
-            font-weight: 700;
-        }
-        .event-card p {
-            margin-top: 5px;
-            color: var(--color-text-subtle);
-            font-size: 0.9rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-
-        .auth-toggle-button {
-    flex: 1;
-    padding: 10px;
-    background-color: transparent;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-    color: var(--color-text-dark);
-    border-bottom: 2px solid transparent;
-    transition: border-color 0.2s ease;
-}
-
-.auth-toggle-button.active {
-    border-bottom: 2px solid var(--color-navy-accent);
-    color: var(--color-navy-accent);
-}
-
-.auth-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-
-        /* --- Floating Action Button (FAB) --- */
-        .fab {
-            position: fixed;
-            right: calc(50% - 200px + 20px);
-            bottom: 85px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background-color: var(--color-navy-accent);
-            color: white;
-            font-size: 2rem;
-            font-weight: 300;
-            border: none;
-            box-shadow: 0 8px 15px rgba(91, 90, 156, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 20;
-        }
-        .fab:hover { background-color: #6a69b6; }
-        
-        /* --- Bottom Navigation (Instagram Style) --- */
-        .nav-bar {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            max-width: 450px;
-            height: 60px;
-            background-color: var(--color-light-surface);
-            border-top: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: space-around;
-            z-index: 15;
-            padding-bottom: 10px; /* PWA/iOS Safety */ 
-            user-select: none;
-            -webkit-user-select: none; /* Für Safari / iOS */       
-            }
-        .nav-button {
-            -webkit-tap-highlight-color: transparent;
-            flex-grow: 1;
-            background: none;
-            border: none;
-            color: var(--color-text-subtle);
-            font-size: 0.75rem;
-            font-weight: 500;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            transition: color 0.2s;
-            cursor: pointer;
-        }
-        .nav-button-active {
-            color: var(--color-navy-accent);
-            font-weight: 700;
-        }
-
-        /* --- Image Preview for Completed Cards --- */
-        .completed-image-preview {
-            width: 100%;
-            height: 120px;
-            overflow: hidden;
-            border-radius: 12px;
-            margin-bottom: 15px;
+            width: 100%; max-width: 450px; min-height: 100vh;
+            background-color: var(--color-bg);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.05);
+            display: flex; flex-direction: column;
+            color: var(--color-text-main); overflow: hidden;
             position: relative;
         }
-        .completed-image-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
+        
+        .header {
+            padding: 0 20px 0 20px;
+            background-color: var(--color-bg);
+            position: sticky; top: 0; z-index: 10;
         }
         
-        /* --- Modals & Overlays --- */
+        .header::after {
+            content: ''; position: absolute; bottom: -20px; left: 0; right: 0; height: 20px;
+            background: linear-gradient(to bottom, var(--color-bg), transparent); pointer-events: none;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 10px 20px 100px 20px;
+            overflow-y: auto; -webkit-overflow-scrolling: touch;
+        }
+
+        h1 { font-weight: 800; letter-spacing: -0.5px; margin-bottom: 15px; color: var(--color-text-main); }
+
+        /* --- Category Filters (Chips) - NEW FEATURE --- */
+        .category-scroll {
+            display: flex; gap: 8px; overflow-x: auto; 
+            padding-bottom: 10px; margin-bottom: 5px;
+            scrollbar-width: none; -ms-overflow-style: none;
+        }
+        .category-scroll::-webkit-scrollbar { display: none; }
+        
+        .filter-chip {
+            padding: 8px 14px; border-radius: 20px;
+            font-size: 0.85rem; font-weight: 600; white-space: nowrap;
+            background-color: var(--color-surface); color: var(--color-text-muted);
+            border: 1px solid rgba(0,0,0,0.05);
+            cursor: pointer; transition: all 0.2s ease;
+            display: flex; align-items: center; gap: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .filter-chip.active {
+            background-color: var(--color-text-main); color: white;
+            border-color: var(--color-text-main);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        /* --- Inputs --- */
+        .input-field, .textarea-field {
+            width: 100%; box-sizing: border-box;
+            padding: 14px 16px; border-radius: var(--radius-sm);
+            background-color: #f0f0f2;
+            border: 1px solid #e0e0e0; color: var(--color-text-main);
+            font-family: inherit; font-size: 1rem; transition: background 0.2s;
+        }
+        .input-field:focus, .textarea-field:focus { outline: none; background-color: white; border-color: var(--color-primary); }
+        .textarea-field { resize: none; line-height: 1.5; min-height: 100px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--color-text-muted); margin-bottom: 6px; margin-left: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* --- Buttons --- */
+        .btn {
+            padding: 14px 20px; border-radius: 14px; font-weight: 600;
+            cursor: pointer; border: none; transition: transform 0.1s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn:active { transform: scale(0.97); }
+
+        .btn-primary { background-color: var(--color-primary); color: white; box-shadow: 0 4px 12px rgba(82, 164, 218, 0.3); }
+        .btn-secondary { background-color: transparent; color: var(--color-text-main); border: 1px solid #dcdcdc; }
+        .btn-danger { background-color: rgba(239, 68, 68, 0.1); color: var(--color-danger); }
+        .edit-icon-btn { background: none; border: none; padding: 4px; cursor: pointer; color: black; }
+
+        /* --- Event Card (List View) - NEW DESIGN --- */
+        .event-card {
+            background-color: var(--color-surface);
+            padding: 20px; border-radius: var(--radius-md); margin-bottom: 16px;
+            box-shadow: var(--shadow-card); cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.02);
+            position: relative; overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .event-card:active { transform: scale(0.99); }
+        
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .card-category-icon {
+            background-color: #f0f9ff; color: var(--color-primary);
+            padding: 6px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+        }
+        .card-title { margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--color-text-main); line-height: 1.3; }
+        .card-desc { 
+            margin: 0; color: var(--color-text-muted); font-size: 0.95rem; 
+            line-height: 1.5;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; 
+        }
+        .card-badge {
+            font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--color-text-muted); margin-bottom: 4px; display: block;
+        }
+
+        /* --- Gallery Grid (RESTORED) --- */
+        .gallery-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px;
+            border-radius: 16px; overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .gallery-item {
+            aspect-ratio: 1 / 1; background-color: #e5e5e5;
+            position: relative; overflow: hidden; cursor: pointer;
+        }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+        .gallery-item:active img { transform: scale(0.95); }
+        .gallery-item-placeholder {
+            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+            background-color: #f0f0f0; color: #ccc; font-size: 0.7rem; text-align: center; padding: 5px;
+        }
+        .gallery-footer-msg {
+            text-align: center; padding: 40px 20px; color: var(--color-text-muted);
+            font-family: 'Inter', sans-serif; font-weight: 500; font-size: 0.9rem; letter-spacing: 0.5px; opacity: 0.8;
+        }
+
+        /* --- Auth & Layout (RESTORED) --- */
+        .auth-toggle-button { flex: 1; padding: 10px; background: transparent; border: none; font-weight: bold; cursor: pointer; color: var(--color-text-main); border-bottom: 2px solid transparent; }
+        .auth-toggle-button.active { border-bottom: 2px solid var(--color-primary); color: var(--color-primary); }
+        .auth-form { display: flex; flex-direction: column; gap: 15px; }
+
+        /* --- FAB & Nav --- */
+        .fab {
+            position: fixed; right: calc(50% - 200px + 20px); bottom: 85px; width: 56px; height: 56px;
+            border-radius: 50%; background-color: var(--color-primary); color: white;
+            border: none; box-shadow: 0 8px 15px rgba(82, 164, 218, 0.4); display: flex; align-items: center; justify-content: center; z-index: 20; cursor: pointer;
+        }
+        
+        .nav-bar {
+            position: fixed; bottom: 0; width: 100%; max-width: 450px; height: 65px;
+            background-color: var(--color-surface); border-top: 1px solid #e0e0e0;
+            display: flex; justify-content: space-around; z-index: 15; padding-bottom: 10px;
+        }
+        .nav-button {
+            flex-grow: 1; background: none; border: none; color: var(--color-text-muted);
+            font-size: 0.75rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer;
+        }
+        .nav-button-active { color: var(--color-primary); font-weight: 700; }
+
+        /* --- Modals --- */
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center; z-index: 50;
+            animation: fadeIn 0.2s ease-out;
         }
         .modal-content {
-            background-color: var(--color-light-surface);
-            padding: 25px;
-            border-radius: 25px;
-            width: 80%;
-            max-width: 400px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            animation: fadeIn 0.3s ease-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            background-color: var(--color-surface); padding: 25px; border-radius: 25px;
+            width: 80%; max-width: 350px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.2s ease-out;
         }
         
-        /* Vollbild-Image-Modal */
-        #image-zoom-modal {
-            background-color: rgba(0, 0, 0, 0.9);
-            padding: 0;
-            border-radius: 0;
-            max-width: none;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        #image-zoom-modal img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            border-radius: 0;
-        }
-        #image-zoom-modal .close-btn {
-            position: absolute;
-            top: 50px;
-            right: 20px;
-            z-index: 60;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.2);
-            color: white;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(5px);
-            border: none;
+        .select-input {
+            width: 100%; padding: 14px 16px; border-radius: var(--radius-sm);
+            background-color: #f0f0f2; border: none; font-size: 1rem; color: var(--color-text-main);
+            appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23333%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat; background-position: right 15px center; background-size: 16px;
         }
 
-        .edit-icon-btn {
-            background: none;
-            border: none;
-            padding: 4px;
-            border-radius: 6px;
-            transition: background-color 0.2s ease;
-            align-items: center;
-            justify-content: center;
-            line-height: 0;
-            color: black;
-            }
+        /* --- Memory Modal (Swipe) --- */
+        .memory-modal-wrapper { position: relative; width: 100%; max-width: 400px; display: flex; align-items: center; justify-content: center; }
+        .memory-card { background-color: #fff; width: 85%; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+        .memory-image-container { width: 100%; max-height: 400px; overflow: hidden; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; position: relative; }
+        .memory-image-container img { width: 100%; height: 100%; object-fit: contain; }
+        .memory-details { padding: 20px; }
+        .memory-date { font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .memory-title { font-size: 1.4rem; font-weight: 800; color: var(--color-text-main); margin: 0 0 8px 0; }
+        .memory-desc { font-size: 0.95rem; color: #555; line-height: 1.5; font-style: italic; }
+        .nav-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.2); color: white; border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 60; backdrop-filter: blur(2px); }
+        .nav-arrow.left { left: 10px; } .nav-arrow.right { right: 10px; }
 
-        /* Global Components */
-        .loading-overlay{
-            position: fixed;
-            z-index: 100;
-        }
-        .loading-overlay {
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.1);
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        .spinner {
-            border: 4px solid var(--color-text-subtle);
-            border-top: 4px solid var(--color-navy-accent);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Mobile specific style to keep app centered */
+        /* Loading */
+        .loading-overlay { position: fixed; inset: 0; background-color: rgba(255, 255, 255, 0.8); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
+        .spinner { border: 4px solid #e0e0e0; border-top: 4px solid var(--color-primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         @media (min-width: 451px) {
-            .app-container {
-                border-radius: 20px;
-                margin: 20px 0;
-                min-height: calc(100vh - 40px);
-            }
-            .fab {
-                right: calc(50% - 225px + 20px);
-            }
+            .app-container { border-radius: 20px; margin: 20px 0; min-height: calc(100vh - 40px); border: 1px solid #eee; }
+            .fab { right: calc(50% - 225px + 20px); }
         }
     </style>
-    <!-- Firebase Imports -->
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, addDoc, deleteDoc, updateDoc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // IMPORTANT: Set log level for debugging
-        setLogLevel('debug');
-
-        // --- GLOBAL SETUP & STATE ---
-
-        // User provided config (used as fallback if not in Canvas environment)
+        // CONFIG
         const EXTERNAL_FIREBASE_CONFIG = {
             apiKey: "AIzaSyCHy4CrrAxKuLf_HPrA3_4ytSzhuEciiJE",
             authDomain: "dateplanner-6ed32.firebaseapp.com",
             projectId: "dateplanner-6ed32",
-            storageBucket: "dateplanner-6ed32.firebasestorage.app", // Changed to default bucket format
+            storageBucket: "dateplanner-6ed32.firebasestorage.app",
             messagingSenderId: "791640067999",
             appId: "1:791640067999:web:eecf6d61690adaf9b1f7aa",
             measurementId: "G-W371VT4B3Z"
         };
-        
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : EXTERNAL_FIREBASE_CONFIG;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        let currentUser = null;
-        let userId = null;
-        let userDisplayName = 'Dein Name'; // Custom display name
-        let currentTab = 'geplant'; 
-        let dates = []; 
-        let searchText = '';
+        // --- STATE & CONSTANTS ---
+        const CATEGORIES = [
+            { id: 'all', label: 'Alle', icon: 'layers' },
+            { id: 'zuhause', label: 'Zuhause', icon: 'home' },
+            { id: 'unterwegs', label: 'Unterwegs', icon: 'map-pin' },
+            { id: 'essen', label: 'Essen', icon: 'utensils' },
+            { id: 'aktivitaet', label: 'Aktivität', icon: 'zap' },
+            { id: 'sonstiges', label: 'Sonstiges', icon: 'package' }
+        ];
 
-        // --- UI ELEMENTS ---
+        let currentUser = null, userId = null, userDisplayName = 'Dein Name';
+        let currentTab = 'geplant'; 
+        let currentFilter = 'all'; // New Filter State
+        let dates = [], filteredDates = []; 
+        let searchText = '';
+        let currentMemoryIndex = -1;
+
+        // --- DOM ELEMENTS ---
         const authScreen = document.getElementById('auth-screen');
         const appScreen = document.getElementById('app-screen');
         const eventListContainer = document.getElementById('event-list-container');
         const headerTitle = document.getElementById('header-title');
         const searchInput = document.getElementById('search-input');
-        const profileUserName = document.getElementById('profile-username');
-        const profileUserId = document.getElementById('profile-userid');
-        const profileDateCount = document.getElementById('profile-date-count');
-        const profileEditNameInput = document.getElementById('profile-edit-name');
-        const navButtons = {
-            geplant: document.getElementById('nav-geplant'),
-            erledigt: document.getElementById('nav-erledigt'),
-            konto: document.getElementById('nav-konto')
-        };
-        const loadingOverlay = document.getElementById('loading-overlay');
+        
+        // Modals
         const modalOverlay = document.getElementById('modal-overlay');
-        const deleteModal = document.getElementById('delete-modal');
+        const detailModal = document.getElementById('detail-modal');
         const dateFormModal = document.getElementById('date-form-modal');
         const completeModal = document.getElementById('complete-modal');
-        const detailModal = document.getElementById('detail-modal');
-        const imageZoomModal = document.getElementById('image-zoom-modal');
-        const editProfileModal = document.getElementById('edit-profile-modal');
-
-        // --- FIREBASE PATHS ---
-        function getDatesCollectionPath() {
-            return `/artifacts/${appId}/users/${userId}/dates`;
-        }
-        function getProfileDocRef() {
-            if (!userId) return null;
-            return doc(db, `/artifacts/${appId}/users/${userId}/profile`, 'user_data');
-        }
-
-        // --- UTILITY FUNCTIONS ---
-        function showLoading(show) {
-            loadingOverlay.style.display = show ? 'flex' : 'none';
-        }
-
-
+        const deleteModal = document.getElementById('delete-modal');
+        const memoryModalContainer = document.getElementById('memory-modal-container');
+        
+        // --- HELPERS ---
+        function getDatesCollectionPath() { return `/artifacts/${appId}/users/${userId}/dates`; }
+        function getProfileDocRef() { return userId ? doc(db, `/artifacts/${appId}/users/${userId}/profile`, 'user_data') : null; }
+        function showLoading(show) { document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none'; }
+        
         window.closeModal = function() {
             modalOverlay.style.display = 'none';
-            // Clear inputs/previews on close
-            const completeImageInput = document.getElementById('complete-image-input');
-            const completeImagePreview = document.getElementById('complete-image-preview');
-            if (completeImageInput) completeImageInput.value = '';
-            if (completeImagePreview) completeImagePreview.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-text-subtle);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                <span>Foto hinzufügen (Optional)</span>
-            `;
         }
 
         function showModal(modalElement) {
             modalOverlay.style.display = 'flex';
-            // Alle Modals ausblenden
-            deleteModal.style.display = 'none';
-            dateFormModal.style.display = 'none';
-            completeModal.style.display = 'none';
-            detailModal.style.display = 'none';
-            imageZoomModal.style.display = 'none';
-            editProfileModal.style.display = 'none';
-            // Nur das gewünschte Modal anzeigen
-            modalElement.style.display = 'block';
-        }
-        
-        window.switchTab = function(tab) {
-            currentTab = tab;
-            // Update active button state (Pure CSS approach)
-            Object.keys(navButtons).forEach(key => {
-                navButtons[key].classList.remove('nav-button-active');
-                // Lucide Icons müssen erneut initialisiert werden, um die korrekte Farbe zu erhalten
-                const iconElement = navButtons[key].querySelector('svg');
-                if (iconElement) {
-                    iconElement.setAttribute('stroke', key === tab ? 'var(--color-navy-accent)' : 'var(--color-text-subtle)');
-                    iconElement.setAttribute('fill', 'none');
-                }
-            });
-            navButtons[tab].classList.add('nav-button-active');
-            lucide.createIcons(); // Erneutes Rendern der Icons
-
-            // Title and Search visibility update
-            const eventView = document.getElementById('event-view');
-            const fabButton = document.getElementById('fab-add');
+            document.querySelectorAll('.modal-content, .memory-modal-wrapper').forEach(m => m.style.display = 'none');
             
-            if (tab === 'konto') {
-                eventView.style.display = 'none';
-                fabButton.style.display = 'none';
-                headerTitle.textContent = 'Dein Konto';
+            if (modalElement === memoryModalContainer) {
+                modalElement.style.display = 'flex';
+                const card = modalElement.querySelector('.memory-card');
+                card.style.animation = 'none'; card.offsetHeight; 
+                card.style.animation = 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
             } else {
-                eventView.style.display = 'block';
-                fabButton.style.display = tab === 'geplant' ? 'flex' : 'none';
-                headerTitle.textContent = tab === 'geplant' ? 'Geplante Dates' : 'Erledigte Dates';
-                searchInput.placeholder = tab === 'geplant' ? 'Geplante Dates suchen...' : 'Erledigte Dates suchen...';
+                modalElement.style.display = 'block';
             }
-            
-            renderEvents();
         }
 
-        // --- AUTHENTICATION LOGIC ---
+        // --- AUTH ---
+        const initAuth = async () => {
+             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            }
+        };
+        initAuth();
 
         onAuthStateChanged(auth, async (user) => {
-            if (user && !user.isAnonymous) {
-                currentUser = user;
-                userId = user.uid;
-                appScreen.style.display = 'flex';
-                authScreen.style.display = 'none';
-                await setupProfileListener();
-                setupDateListener();
+            if (user) {
+                currentUser = user; userId = user.uid;
+                appScreen.style.display = 'flex'; authScreen.style.display = 'none';
+                await setupProfileListener(); setupDateListener();
             } else {
-                currentUser = null;
-                userId = null;
-                appScreen.style.display = 'none';
-                authScreen.style.display = 'flex';
+                currentUser = null; userId = null;
+                appScreen.style.display = 'none'; authScreen.style.display = 'flex';
                 dates = [];
-                userDisplayName = 'Dein Name';
-                renderEvents();
             }
         });
 
-        async function initialAuth() {
-            showLoading(true);
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                }
-            } catch (error) {
-                console.error("Initial Auth Error:", error);
-            } finally {
-                showLoading(false);
+        // --- RENDER LOGIC ---
+        function renderCategoryChips() {
+            const container = document.getElementById('category-filter-container');
+            if(currentTab !== 'geplant') {
+                container.style.display = 'none';
+                return;
             }
+            container.style.display = 'flex';
+            container.innerHTML = '';
+            
+            CATEGORIES.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `filter-chip ${currentFilter === cat.id ? 'active' : ''}`;
+                btn.innerHTML = `<i data-lucide="${cat.icon}" width="14" height="14"></i> ${cat.label}`;
+                btn.onclick = () => {
+                    currentFilter = cat.id;
+                    renderEvents();
+                    renderCategoryChips(); // Re-render to update active class
+                };
+                container.appendChild(btn);
+            });
+            lucide.createIcons();
         }
 
-        
-        // Toggle-Logik
-const loginForm = document.getElementById('login-form');
-const registerForm = document.getElementById('register-form');
-const toggleLogin = document.getElementById('toggle-login');
-const toggleRegister = document.getElementById('toggle-register');
-
-toggleLogin.addEventListener('click', () => {
-    loginForm.style.display = 'flex';
-    registerForm.style.display = 'none';
-    toggleLogin.classList.add('active');
-    toggleRegister.classList.remove('active');
-});
-
-toggleRegister.addEventListener('click', () => {
-    loginForm.style.display = 'none';
-    registerForm.style.display = 'flex';
-    toggleLogin.classList.remove('active');
-    toggleRegister.classList.add('active');
-});
-
-// Login Event
-loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    showLoading(true);
-    try {
-        await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-        console.error("Login Error:", error);
-    } finally {
-        showLoading(false);
-    }
-});
-
-// Register Event
-registerForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('register-email').value;
-    const password = document.getElementById('register-password').value;
-    showLoading(true);
-    try {
-        await createUserWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-        console.error("Registration Error:", error);
-    } finally {
-        showLoading(false);
-    }
-});
-
-
-
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            showLoading(true);
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                console.error("Login Error:", error);
-            } finally {
-                showLoading(false);
-            }
-        });
-
-        document.getElementById('register-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            showLoading(true);
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                console.error("Registration Error:", error);
-            } finally {
-                showLoading(false);
-            }
-        });
-
-        document.getElementById('logout-button').addEventListener('click', async () => {
-            showLoading(true);
-            try {
-                await signOut(auth);
-            } catch (error) {
-                console.error("Logout Error:", error);
-            } finally {
-                showLoading(false);
-            }
-        });
-        
-        // --- PROFILE MANAGEMENT ---
-        
-        async function setupProfileListener() {
-            if (!userId) return;
+        function renderEvents() {
+            renderCategoryChips();
             
-            onSnapshot(getProfileDocRef(), (docSnapshot) => {
-                if (docSnapshot.exists()) {
-                    userDisplayName = docSnapshot.data().displayName || currentUser.email.split('@')[0] || 'Dein Name';
-                } else {
-                    // Erstellen Sie einen Standardeintrag, wenn keiner existiert
-                    userDisplayName = currentUser.email.split('@')[0] || 'Dein Name';
-                    setDoc(getProfileDocRef(), { 
-                        displayName: userDisplayName,
-                        userId: userId,
-                        email: currentUser.email
-                    }, { merge: true });
-                }
+            filteredDates = dates.filter(date => {
+                const isStatusMatch = currentTab === 'geplant' ? date.status === 'geplant' : date.status === 'erledigt';
+                const searchLower = searchText.toLowerCase();
+                const isSearchMatch = searchText.trim() === '' || 
+                    date.title.toLowerCase().includes(searchLower) || 
+                    (date.description && date.description.toLowerCase().includes(searchLower));
+                
+                const dateCat = date.category || 'sonstiges';
+                const isCategoryMatch = currentFilter === 'all' || dateCat === currentFilter;
+                return isStatusMatch && isSearchMatch && isCategoryMatch;
+            });
+
+            eventListContainer.innerHTML = '';
+            const profileView = document.getElementById('profile-view');
+            const searchContainer = document.getElementById('search-container');
+            
+            if (currentTab === 'konto') {
+                searchContainer.style.display = 'none';
+                profileView.style.display = 'block';
                 updateProfileUI();
-            }, (error) => {
-                 console.error("Error setting up profile listener:", error);
-            });
-        }
-        
-        document.getElementById('edit-profile-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const newName = profileEditNameInput.value.trim();
-            if (!newName) { return; }
-            
-            showLoading(true);
-            closeModal();
-            try {
-                await setDoc(getProfileDocRef(), { 
-                    displayName: newName 
-                }, { merge: true });
-            } catch (error) {
-                console.error("Error updating profile:", error);
-            } finally {
-                showLoading(false);
+                return;
             }
-        });
-        
-        window.showEditProfileModal = function() {
-            profileEditNameInput.value = userDisplayName;
-            showModal(editProfileModal);
-        }
-
-
-        // --- DATE MANAGEMENT (CRUD) ---
-
-        function setupDateListener() {
-            if (!userId) return;
-            const datesCollection = collection(db, getDatesCollectionPath());
             
-            onSnapshot(datesCollection, (snapshot) => {
-                dates = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                dates.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); 
-                renderEvents();
-            }, (error) => {
-                console.error("Error setting up date listener:", error);
-            });
-        }
+            searchContainer.style.display = 'block';
+            profileView.style.display = 'none';
 
-        async function addDate(title, description) {
-            if (!userId) { return; }
-            showLoading(true);
-            try {
-                await addDoc(collection(db, getDatesCollectionPath()), {
-                    title: title,
-                    description: description,
-                    status: 'geplant', 
-                    createdAt: Date.now(),
-                    completedAt: null,
-                    imageUrl: null,
-                    userId: userId
+            // EMPTY STATE
+            if (filteredDates.length === 0) {
+                eventListContainer.innerHTML = `
+                    <div style="text-align: center; color: var(--color-text-muted); padding: 60px 20px;">
+                        <div style="background: #e4e4e7; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                            <i data-lucide="ghost" color="#999"></i>
+                        </div>
+                        <p style="font-weight: 500;">
+                            ${currentTab === 'geplant' 
+                                ? (currentFilter === 'all' ? 'Alles leer hier. Plan was schönes!' : 'Nichts in dieser Kategorie.') 
+                                : 'Noch keine Erinnerungen.'}
+                        </p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            // --- LIST VIEW (GEPLANT) - NEW DESIGN KEPT ---
+            if (currentTab === 'geplant') {
+                filteredDates.forEach(date => {
+                    const el = document.createElement('div');
+                    el.className = 'event-card';
+                    el.onclick = () => window.openEditModal(date.id);
+                    
+                    const catId = date.category || 'sonstiges';
+                    const catInfo = CATEGORIES.find(c => c.id === catId) || CATEGORIES[5];
+
+                    el.innerHTML = `
+                        <span class="card-badge">${catInfo.label}</span>
+                        <div class="card-top">
+                            <h3 class="card-title">${escapeHtml(date.title)}</h3>
+                            <div class="card-category-icon">
+                                <i data-lucide="${catInfo.icon}" width="16" height="16"></i>
+                            </div>
+                        </div>
+                        <p class="card-desc">${escapeHtml(date.description || 'Keine Beschreibung.')}</p>
+                    `;
+                    eventListContainer.appendChild(el);
                 });
-            } catch (error) {
-                console.error("Error adding date:", error);
-            } finally {
-                showLoading(false);
+            } 
+            // --- GRID VIEW (ERLEDIGT) - RESTORED ORIGINAL ---
+            else {
+                const gridDiv = document.createElement('div');
+                gridDiv.className = 'gallery-grid';
+                filteredDates.forEach((date, index) => {
+                    const el = document.createElement('div');
+                    el.className = 'gallery-item';
+                    el.onclick = () => window.openMemory(index);
+                    
+                    if (date.imageUrl) {
+                        el.innerHTML = `<img src="${date.imageUrl}" loading="lazy" alt="Memory">`;
+                    } else {
+                        el.innerHTML = `<div class="gallery-item-placeholder"><span>${escapeHtml(date.title)}</span></div>`;
+                    }
+                    gridDiv.appendChild(el);
+                });
+                eventListContainer.appendChild(gridDiv);
+                
+                // RESTORED FOOTER
+                const footer = document.createElement('div');
+                footer.className = 'gallery-footer-msg';
+                footer.innerHTML = "✨ auf viele weitere gemeinsame dates!";
+                eventListContainer.appendChild(footer);
             }
+            lucide.createIcons();
         }
 
-        async function updateDate(id, updates) {
-            if (!userId) return;
-            showLoading(true);
-            try {
-                const dateRef = doc(db, getDatesCollectionPath(), id);
-                await updateDoc(dateRef, updates);
-            } catch (error) {
-                console.error("Error updating date:", error);
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        async function deleteDate(id) {
-            if (!userId) return;
-            showLoading(true);
-            try {
-                const dateRef = doc(db, getDatesCollectionPath(), id);
-                await deleteDoc(dateRef);
-            } catch (error) {
-                console.error("Error deleting date:", error);
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // --- INTERACTION & MODALS ---
-        
-        window.showDetailModal = function(id) {
+        // --- EDIT / DETAIL MODAL (New Inline Editing) ---
+        window.openEditModal = function(id) {
             const date = dates.find(d => d.id === id);
             if (!date) return;
-            
-            document.getElementById('detail-title').textContent = date.title;
-            document.getElementById('detail-description').textContent = date.description || 'Keine Beschreibung vorhanden.';
-            document.getElementById('detail-status').textContent = date.status === 'geplant' ? 'Geplant' : 'Erledigt';
-            
-            const actionContainer = document.getElementById('detail-action-container');
-            actionContainer.innerHTML = '';
-            
-            if (date.status === 'geplant') {
-                actionContainer.innerHTML = `
-                    <button onclick="window.showCompleteModal('${date.id}');" class="btn btn-success" style="width: 100%; margin-bottom: 10px; color: var(--color-success); border-color: var(--color-success)">
-                        Als Erledigt markieren
-                    </button>
-                    <button onclick="window.showDeleteModal('${date.id}');" class="btn btn-secondary" style="width: 100%; color: var(--color-danger); border-color: var(--color-danger);">
-                        Event löschen
-                    </button>
-                `;
-            } else {
-                 actionContainer.innerHTML = `
-                    <p style="color: var(--color-text-subtle); font-size: 0.9rem; text-align: center; margin-top: 10px;">
-                        Abgeschlossen am: ${new Date(date.completedAt).toLocaleDateString()}
-                    </p>
-                    <button onclick="window.showDeleteModal('${date.id}');" class="btn btn-secondary" style="width: 100%; color: var(--color-danger); border-color: var(--color-danger);">
-                        Event löschen
-                    </button>
-                 `;
-            }
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-title').value = date.title;
+            document.getElementById('edit-desc').value = date.description || '';
+            document.getElementById('edit-category').value = date.category || 'sonstiges';
             showModal(detailModal);
         }
-        
-        window.showImageZoom = function(imageUrl) {
-            document.getElementById('zoomed-image').src = imageUrl;
-            showModal(imageZoomModal);
+
+        document.getElementById('edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const title = document.getElementById('edit-title').value.trim();
+            const description = document.getElementById('edit-desc').value.trim();
+            const category = document.getElementById('edit-category').value;
+            
+            if(!title) return;
+            
+            showLoading(true);
+            try {
+                await updateDoc(doc(db, getDatesCollectionPath(), id), {
+                    title, description, category
+                });
+                closeModal();
+            } catch(err) { console.error(err); } 
+            finally { showLoading(false); }
+        });
+
+        window.triggerComplete = function() { const id = document.getElementById('edit-id').value; closeModal(); window.showCompleteModal(id); }
+        window.triggerDelete = function() { const id = document.getElementById('edit-id').value; closeModal(); window.showDeleteModal(id); }
+
+        // --- NEW ENTRY ---
+        function populateCategoryDropdowns() {
+            const opts = CATEGORIES.filter(c => c.id !== 'all').map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+            document.getElementById('new-date-category').innerHTML = opts;
+            document.getElementById('edit-category').innerHTML = opts;
         }
 
-        window.showDeleteModal = function(id) {
-            document.getElementById('delete-id').value = id;
-            showModal(deleteModal);
-        }
-        
-        window.showCompleteModal = function(id) {
-            document.getElementById('complete-id').value = id;
-            showModal(completeModal);
-        }
-        
-        window.confirmDelete = function() {
-            const id = document.getElementById('delete-id').value;
-            deleteDate(id);
-            closeModal();
-        }
+        document.getElementById('fab-add').addEventListener('click', () => {
+            document.getElementById('new-date-title').value = '';
+            document.getElementById('new-date-description').value = '';
+            document.getElementById('new-date-category').value = 'sonstiges';
+            showModal(dateFormModal);
+        });
 
-        // --- IMAGE UPLOAD & COMPLETION ---
+        document.getElementById('date-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const t = document.getElementById('new-date-title').value.trim();
+            const d = document.getElementById('new-date-description').value.trim();
+            const c = document.getElementById('new-date-category').value;
+            
+            if(t && userId) { 
+                showLoading(true);
+                try {
+                    await addDoc(collection(db, getDatesCollectionPath()), {
+                        title: t, description: d, category: c, 
+                        status: 'geplant', createdAt: Date.now(), 
+                        completedAt: null, imageUrl: null, userId
+                    });
+                    closeModal();
+                } catch(e) { console.error(e); } 
+                finally { showLoading(false); }
+            }
+        });
 
+        // --- OTHER LOGIC (Complete, Delete, Memories - kept same) ---
+        window.showCompleteModal = function(id) { document.getElementById('complete-id').value = id; showModal(completeModal); }
+        window.showDeleteModal = function(id) { document.getElementById('delete-id').value = id; showModal(deleteModal); }
+        window.confirmDelete = function() { const id = document.getElementById('delete-id').value; deleteDate(id); closeModal(); }
+        async function deleteDate(id) { if (!userId) return; showLoading(true); try { await deleteDoc(doc(db, getDatesCollectionPath(), id)); } catch (e) { console.error(e); } finally { showLoading(false); } }
+        
         const completeImageInput = document.getElementById('complete-image-input');
-        const completeImagePreview = document.getElementById('complete-image-preview');
-
-        if(completeImageInput) {
-            completeImageInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        completeImagePreview.innerHTML = `
-                            <img src="${e.target.result}" alt="Vorschau" style="width:100%; height:100px; object-fit:cover; border-radius:10px; margin-bottom:10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
-                        `;
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    completeImagePreview.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-text-subtle);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                        <span>Foto hinzufügen (Optional)</span>
-                    `;
-                }
-            });
-        }
-
+        completeImageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => { document.getElementById('complete-image-preview').innerHTML = `<img src="${ev.target.result}" style="width:100%; height:140px; object-fit:cover; border-radius:10px;">`; };
+                reader.readAsDataURL(file);
+            }
+        });
         document.getElementById('complete-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('complete-id').value;
             const file = completeImageInput.files[0];
             showLoading(true);
             closeModal();
-            
             let imageUrl = null;
-
             if (file) {
                 try {
-                    // Verwenden Sie die id als Teil des Dateinamens, um Eindeutigkeit zu gewährleisten
-                    const storageRef = ref(storage, `${userId}/completed-dates/${id}-${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi, '_')}`);
-                    const uploadResult = await uploadBytes(storageRef, file);
-                    imageUrl = await getDownloadURL(uploadResult.ref);
-                } catch (error) {
-                    console.error("Error uploading image:", error);
-                }
+                    const storageRef = ref(storage, `${userId}/completed-dates/${id}-${Date.now()}`);
+                    const res = await uploadBytes(storageRef, file);
+                    imageUrl = await getDownloadURL(res.ref);
+                } catch (err) { console.error(err); }
             }
-
-            const updates = {
-                status: 'erledigt',
-                completedAt: Date.now(),
-                ...(imageUrl && { imageUrl: imageUrl })
-            };
-
-            await updateDate(id, updates);
-            showLoading(false);
-        });
-        
-        // --- UI RENDERING & INTERACTION ---
-
-        function renderEvents() {
-            const filteredDates = dates.filter(date => {
-                const isStatusMatch = currentTab === 'geplant' ? date.status === 'geplant' : date.status === 'erledigt';
-                const isSearchMatch = searchText.trim() === '' || date.title.toLowerCase().includes(searchText.toLowerCase()) || (date.description && date.description.toLowerCase().includes(searchText.toLowerCase()));
-                return isStatusMatch && isSearchMatch;
-            });
-
-            eventListContainer.innerHTML = '';
-            
-            // Handle view switching
-            const profileView = document.getElementById('profile-view');
-            const eventViewContainer = document.getElementById('event-view-container');
-
-            if (currentTab === 'konto') {
-                eventViewContainer.style.display = 'none';
-                profileView.style.display = 'block';
-                updateProfileUI(); // Wichtig: UI hier aktualisieren
-                return;
-            }
-            
-            eventViewContainer.style.display = 'block';
-            profileView.style.display = 'none';
-            
-            const eventCountText = filteredDates.length === 1 ? '1 Date gefunden' : `${filteredDates.length} Dates gefunden`;
-            document.getElementById('event-count').textContent = currentTab === 'erledigt' ? eventCountText : '';
-
-            if (filteredDates.length === 0) {
-                eventListContainer.innerHTML = `
-                    <div style="text-align: center; color: var(--color-text-subtle); padding: 50px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 10px; color: #a3a3a3;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                        <p style="font-weight: 500;">
-                            ${currentTab === 'geplant' ? 'Keine geplanten Dates. Fügen Sie eines hinzu!' : 'Noch keine Dates erledigt.'}
-                        </p>
-                    </div>
-                `;
-                return;
-            }
-
-            filteredDates.forEach(date => {
-                const element = document.createElement('div');
-                element.className = 'event-card';
-                element.setAttribute('onclick', `window.showDetailModal('${date.id}')`);
-                
-                let content = '';
-                let statusIcon = date.status === 'geplant' ? 
-                    `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-navy-accent);"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>` : 
-                    `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-success);"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-
-
-                if (currentTab === 'geplant') {
-                    // Planned Events
-                    content = `
-                        <div class="event-card-header">
-                            <div>
-                                <h3>${date.title}</h3>
-                                <p>${date.description || 'Keine Beschreibung'}</p>
-                            </div>
-                            <div style="display: flex; gap: 8px; align-items: center;">
-                                ${statusIcon}
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    // Completed Events
-                    content = `
-                        ${date.imageUrl ? `
-                            <div class="completed-image-preview" onclick="event.stopPropagation(); window.showImageZoom('${date.imageUrl}');">
-                                <img src="${date.imageUrl}" onerror="this.onerror=null; this.src='https://placehold.co/400x120/f1f1f1/737373?text=Bild+nicht+verf%C3%BCgbar';" alt="${date.title}"/>
-                            </div>` : ''}
-                        <div class="event-card-header">
-                            <div>
-                                <h3 style="color: var(--color-text-dark);">${date.title}</h3>
-                                <p style="font-size: 0.8rem; color: var(--color-text-subtle);">Erledigt am: ${new Date(date.completedAt).toLocaleDateString()}</p>
-                            </div>
-                            ${statusIcon}
-                        </div>
-                    `;
-                }
-                
-                element.innerHTML = content;
-                eventListContainer.appendChild(element);
-            });
-        }
-
-        function updateProfileUI() {
-            if (currentUser) {
-                const totalDates = dates.length;
-                const completedDates = dates.filter(d => d.status === 'erledigt').length;
-                
-                profileUserName.textContent = userDisplayName;
-                profileUserId.textContent = userId;
-                profileDateCount.textContent = `${totalDates} Date(s) insgesamt | ${completedDates} erledigt`;
-            }
-        }
-
-        // --- MODAL HANDLERS ---
-        
-        document.getElementById('fab-add').addEventListener('click', () => {
-            document.getElementById('new-date-title').value = '';
-            document.getElementById('new-date-description').value = '';
-            document.getElementById('date-form-button').textContent = 'Hinzufügen';
-            showModal(dateFormModal);
+            try { await updateDoc(doc(db, getDatesCollectionPath(), id), { status: 'erledigt', completedAt: Date.now(), ...(imageUrl && { imageUrl }) }); } catch(err) { console.error(err); } finally { showLoading(false); }
         });
 
-        document.getElementById('date-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const title = document.getElementById('new-date-title').value.trim();
-            const description = document.getElementById('new-date-description').value.trim();
-
-            if (!title) {
-                return;
+        // --- TABS & UI ---
+        window.switchTab = function(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('nav-button-active'));
+            // Fix Icons
+            const btns = { geplant: document.getElementById('nav-geplant'), erledigt: document.getElementById('nav-erledigt'), konto: document.getElementById('nav-konto') };
+            Object.values(btns).forEach(b => b.querySelector('svg').style.stroke = 'var(--color-text-muted)');
+            
+            if(tab === 'geplant') {
+                btns.geplant.classList.add('nav-button-active');
+                btns.geplant.querySelector('svg').style.stroke = 'var(--color-primary)';
+            }
+            if(tab === 'erledigt') {
+                btns.erledigt.classList.add('nav-button-active');
+                btns.erledigt.querySelector('svg').style.stroke = 'var(--color-primary)';
+            }
+            if(tab === 'konto') {
+                btns.konto.classList.add('nav-button-active');
+                btns.konto.querySelector('svg').style.stroke = 'var(--color-primary)';
             }
 
-            addDate(title, description);
-            closeModal();
-        });
-
-        // Search Handler
-        searchInput.addEventListener('input', (e) => {
-            searchText = e.target.value;
+            const fabButton = document.getElementById('fab-add');
+            if (tab === 'konto') {
+                fabButton.style.display = 'none'; headerTitle.textContent = 'account';
+            } else {
+                fabButton.style.display = tab === 'geplant' ? 'flex' : 'none';
+                headerTitle.textContent = tab === 'geplant' ? 'dates ❄️' : 'memories ';
+                searchInput.placeholder = tab === 'geplant' ? 'dates suchen...' : 'memories suchen...';
+            }
             renderEvents();
-        });
+        }
 
-        // --- INITIALIZATION ---
+        // --- MEMORY SWIPE LOGIC ---
+        window.openMemory = function(index) { currentMemoryIndex = index; updateMemoryModalUI(); showModal(memoryModalContainer); }
+        window.nextMemory = function(e) { if(e) e.stopPropagation(); if(currentMemoryIndex < filteredDates.length - 1) { currentMemoryIndex++; updateMemoryModalUI(); } }
+        window.prevMemory = function(e) { if(e) e.stopPropagation(); if(currentMemoryIndex > 0) { currentMemoryIndex--; updateMemoryModalUI(); } }
+        function updateMemoryModalUI() {
+            const date = filteredDates[currentMemoryIndex];
+            if(!date) return;
+            const imgContainer = document.getElementById('memory-image-container');
+            
+            document.getElementById('arrow-left').style.display = currentMemoryIndex > 0 ? 'flex' : 'none';
+            document.getElementById('arrow-right').style.display = currentMemoryIndex < filteredDates.length - 1 ? 'flex' : 'none';
+
+            if(date.imageUrl) {
+                imgContainer.innerHTML = `<img src="${date.imageUrl}">`;
+                imgContainer.style.display = 'flex';
+            } else {
+                imgContainer.style.display = 'none';
+            }
+            document.getElementById('memory-title').textContent = date.title;
+            document.getElementById('memory-date').textContent = date.completedAt ? new Date(date.completedAt).toLocaleDateString('de-DE') : '';
+            document.getElementById('memory-desc').textContent = date.description || '';
+            
+        }
+
+        // --- FIRESTORE LISTENERS ---
+        function setupDateListener() {
+            if (!userId) return;
+            onSnapshot(collection(db, getDatesCollectionPath()), (snap) => {
+                dates = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                dates.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                renderEvents();
+                updateProfileUI();
+            });
+        }
+        async function setupProfileListener() {
+            if (!userId) return;
+            onSnapshot(getProfileDocRef(), (s) => {
+                if (s.exists()) userDisplayName = s.data().displayName || 'User';
+                else setDoc(getProfileDocRef(), { displayName: userDisplayName }, { merge: true });
+                updateProfileUI();
+            });
+        }
+        function updateProfileUI() {
+            if (!currentUser) return;
+            document.getElementById('profile-username').textContent = userDisplayName;
+            const done = dates.filter(d=>d.status==='erledigt').length;
+            document.getElementById('profile-stats').textContent = `${dates.length} Dates | ${done} Erledigt`;
+            document.getElementById('profile-userid').textContent = userId;
+        }
+
+        // --- AUTH FORMS ---
+        document.getElementById('toggle-login').onclick = () => { document.getElementById('login-form').style.display='flex'; document.getElementById('register-form').style.display='none'; document.getElementById('toggle-login').classList.add('active'); document.getElementById('toggle-register').classList.remove('active'); };
+        document.getElementById('toggle-register').onclick = () => { document.getElementById('login-form').style.display='none'; document.getElementById('register-form').style.display='flex'; document.getElementById('toggle-login').classList.remove('active'); document.getElementById('toggle-register').classList.add('active'); };
+        document.getElementById('login-form').onsubmit = async(e) => { e.preventDefault(); showLoading(true); try{ await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-password').value); }catch(e){console.error(e);}finally{showLoading(false);} };
+        document.getElementById('register-form').onsubmit = async(e) => { e.preventDefault(); showLoading(true); try{ await createUserWithEmailAndPassword(auth, document.getElementById('register-email').value, document.getElementById('register-password').value); }catch(e){console.error(e);}finally{showLoading(false);} };
+        document.getElementById('logout-button').onclick = async() => { showLoading(true); try{ await signOut(auth); }catch(e){}finally{showLoading(false);} };
+        document.getElementById('edit-profile-form').addEventListener('submit', async (e) => { e.preventDefault(); const n = document.getElementById('profile-edit-name').value.trim(); if(n) { await setDoc(getProfileDocRef(), { displayName: n }, { merge: true }); closeModal(); }});
+        window.showEditProfileModal = function() { document.getElementById('profile-edit-name').value = userDisplayName; showModal(document.getElementById('edit-profile-modal')); }
         
+        function escapeHtml(text) { if (!text) return text; return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+        searchInput.addEventListener('input', (e) => { searchText = e.target.value; renderEvents(); });
+
         window.onload = function() {
-            initialAuth();
-            switchTab('geplant');
-            // Initialisiert Lucide Icons
+            populateCategoryDropdowns();
             lucide.createIcons();
+            switchTab('geplant');
         }
     </script>
 </head>
 <body>
-    <div id="loading-overlay" class="loading-overlay">
-        <div class="spinner"></div>
-    </div>
+    <div id="loading-overlay" class="loading-overlay"><div class="spinner"></div></div>
     
-    <!-- --- AUTH SCREEN --- -->
-    <!-- --- AUTH SCREEN --- -->
+    <!-- AUTH SCREEN (RESTORED ORIGINAL) -->
     <div id="auth-screen" class="app-container" style="justify-content: center; align-items: center; display: flex;">
-        <div style="width: 75%; max-width: 380px; padding: 30px; background-color: var(--color-light-surface); border-radius: 25px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);">
-
-            <h1 style="font-size: 2rem; font-weight: 800; text-align: center; margin-bottom: 25px; color: var(--color-navy-accent); font-family: 'Inter';">🍂 dates</h1>
-
-            <!-- TOGGLE TABS -->
+        <div style="width: 75%; max-width: 380px; padding: 30px; background-color: var(--color-surface); border-radius: 25px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);">
+            <h1 style="font-size: 2rem; font-weight: 800; text-align: center; margin-bottom: 25px; color: var(--color-primary);">❄️ dates</h1>
             <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
                 <button id="toggle-login" class="auth-toggle-button active">Anmelden</button>
                 <button id="toggle-register" class="auth-toggle-button">Registrieren</button>
             </div>
-
-            <!-- LOGIN FORM -->
             <form id="login-form" class="auth-form">
-                <div class="form-group">
-                    <input id="login-email" type="email" placeholder="E-Mail-Adresse" required class="input-field">
-                </div>
-                <div class="form-group">
-                    <input id="login-password" type="password" placeholder="Passwort" required class="input-field">
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Anmelden</button>
+                <input id="login-email" type="email" placeholder="E-Mail" required class="input-field">
+                <input id="login-password" type="password" placeholder="Passwort" required class="input-field">
+                <button type="submit" class="btn btn-primary">Anmelden</button>
             </form>
-
-            <!-- REGISTER FORM -->
             <form id="register-form" class="auth-form" style="display: none;">
-                <div class="form-group">
-                    <input id="register-email" type="email" placeholder="E-Mail-Adresse" required class="input-field">
-                </div>
-                <div class="form-group">
-                    <input id="register-password" type="password" placeholder="Passwort (min. 6 Zeichen)" required class="input-field">
-                </div>
-                <button type="submit" class="btn btn-secondary" style="width: 100%; background-color: #b6ad90;">Registrieren</button>
+                <input id="register-email" type="email" placeholder="E-Mail" required class="input-field">
+                <input id="register-password" type="password" placeholder="Passwort (min. 6)" required class="input-field">
+                <button type="submit" class="btn btn-secondary">Registrieren</button>
             </form>
-
         </div>
     </div>
 
-
-    <!-- --- APP SCREEN --- -->
+    <!-- MAIN APP -->
     <div id="app-screen" class="app-container" style="display: none;">
-        <!-- Header & Search -->
         <header class="header">
-            <h1 id="header-title" style="font-size: 2rem; font-weight: 800;">Geplante Dates</h1>
-            
-            <div id="event-view-container">
-                <p id="event-count" style="font-size: 0.9rem; color: var(--color-text-subtle); margin-top: -8px; margin-bottom: 10px;"></p>
-                <div id="event-view">
-                    <input id="search-input" type="text" placeholder="Geplante Dates suchen..." class="input-field">
+            <h1 id="header-title">dates</h1>
+            <div id="search-container">
+                <input id="search-input" type="text" placeholder="Suchen..." class="input-field" style="margin-bottom: 10px;">
+                <!-- Category Filters -->
+                <div id="category-filter-container" class="category-scroll">
+                    <!-- Populated by JS -->
                 </div>
             </div>
         </header>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <div id="event-list-container">
-                <!-- Event items will be rendered here -->
-            </div>
+        <main id="main-content" class="main-content">
+            <div id="event-list-container"></div>
             
-            <!-- Profile View (Hidden by default) -->
+            <!-- Profile View (RESTORED ORIGINAL) -->
             <div id="profile-view" style="display: none; margin-top: 10px;">
-                <div style="text-align: center; padding: 30px 20px; background-color: var(--color-light-surface); border-radius: 20px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); margin-bottom: 20px;">
-                    <!-- Minimalist Profile Picture -->
-                    <div style="width: 90px; height: 90px; background-color: var(--color-navy-accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 700; margin: 0 auto 15px; color: white; box-shadow: 0 4px 8px rgba(91, 90, 156, 0.4);">
-                        <span id="profile-initial">P</span>
-                    </div>
-                    
-                    <h2 id="profile-username" style="font-size: 1.5rem; font-weight: 800; margin-bottom: 5px; display: inline-block;">Benutzername</h2>
-                        <button onclick="window.showEditProfileModal()" class="edit-icon-btn" title="Profil bearbeiten">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 20h9"></path>
-                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                            </svg>
-                        </button>
+                <div style="text-align: center; padding: 30px 20px; background-color: var(--color-surface); border-radius: 20px; margin-bottom: 20px;">
+                    <div style="width: 80px; height: 80px; background-color: var(--color-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 700; margin: 0 auto 15px; color: white;">♡</div>
+                    <h2 id="profile-username" style="display: inline-block;">User</h2>
+                    <button onclick="window.showEditProfileModal()" class="edit-icon-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    </button>
                 </div>
-                
-                <!-- Statistik Card -->
-                <div style="background-color: var(--color-light-surface); padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);">
-                    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 30px;">Ihre Statistik</h3>
-                    <p id="profile-date-count" style="color: var(--color-text-dark); font-weight: 500;"></p>
-                    <p style="font-size: 0.75rem; color: var(--color-text-subtle); margin-top: 15px; word-break: break-all;">
-                        <span id="profile-userid" style="font-family: monospace;"></span>
-                    </p>
+                <div style="background-color: var(--color-surface); padding: 15px; border-radius: 16px; margin-bottom: 20px; font-size: 0.8rem; text-align: center; color: #888;">theme: winter ❄️☃️</div>
+                <div style="background-color: var(--color-surface); padding: 20px; border-radius: 16px; margin-bottom: 20px;">
+                    <h3 style="margin-top:0;">Statistik</h3>
+                    <p id="profile-stats"></p>
+                    <p id="profile-userid" style="font-family: monospace; font-size: 0.7rem; color: #999; margin-top: 10px; word-break: break-all;"></p>
                 </div>
-
-                <!-- bra prod. Card -->
-                <div style="background-color: var(--color-light-surface); padding: 5px 20px 5px 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);">
-                    <p>bra productions | made with ❤️</p>
-                </div>
-
-                <button id="logout-button" class="btn btn-secondary" style="width: 100%; color: var(--color-danger); border-color: var(--color-danger);">
-                    Abmelden
-                </button>
+                <div style="background-color: var(--color-surface); padding: 15px; border-radius: 16px; margin-bottom: 20px; font-size: 0.8rem; text-align: center; color: #888;">bra productions | made with ❤️</div>
+                <button id="logout-button" class="btn btn-secondary" style="width: 100%; color: var(--color-danger); border-color: var(--color-danger);">Abmelden</button>
             </div>
         </main>
 
-        <!-- Floating Action Button (FAB) -->
-        <button id="fab-add" class="fab">
-            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        </button>
+        <button id="fab-add" class="fab"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
 
-        <!-- Bottom Navigation Bar (Fixed for PWA-Look) -->
         <nav class="nav-bar">
-            <!-- Geplant -->
             <button id="nav-geplant" onclick="window.switchTab('geplant')" class="nav-button nav-button-active">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-navy-accent);"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
-                <span>Geplant</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                <span>dates</span>
             </button>
-            <!-- Erledigt -->
             <button id="nav-erledigt" onclick="window.switchTab('erledigt')" class="nav-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-text-subtle);"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-                <span>Erledigt</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                <span>memories</span>
             </button>
-            <!-- Konto -->
             <button id="nav-konto" onclick="window.switchTab('konto')" class="nav-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-text-subtle);"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                <span>Konto</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span>account</span>
             </button>
         </nav>
 
-        <!-- --- MODALS --- -->
+        <!-- MODALS -->
         <div id="modal-overlay" class="modal-overlay" onclick="window.closeModal()">
             
-            <!-- 1. Add Date Modal -->
+            <!-- ADD DATE MODAL -->
             <div id="date-form-modal" onclick="event.stopPropagation()" class="modal-content" style="display: none;">
-                <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; color: var(--color-navy-accent); text-align: center;">Neues Event hinzufügen</h3>
-                <form id="date-form" style="width: 100%;">
+                <h3 style="margin-top: 0;">Neues Date</h3>
+                <form id="date-form">
                     <div class="form-group">
-                        <input id="new-date-title" type="text" placeholder="Titel (z.B. Picknick)" required class="input-field">
+                        <label>Titel</label>
+                        <input id="new-date-title" type="text" placeholder="z.B. Picknick im Park" required class="input-field">
                     </div>
                     <div class="form-group">
-                        <textarea id="new-date-description" placeholder="Details/Beschreibung" rows="3" class="input-field"></textarea>
+                        <label>Kategorie</label>
+                        <select id="new-date-category" class="select-input"></select>
                     </div>
-                    <button id="date-form-button" type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
-                        Hinzufügen
-                    </button>
-                    <button type="button" onclick="window.closeModal()" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">
-                        Abbrechen
-                    </button>
+                    <div class="form-group">
+                        <label>Details</label>
+                        <textarea id="new-date-description" placeholder="Was machen wir genau?" class="textarea-field"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Erstellen</button>
                 </form>
             </div>
             
-            <!-- 2. Detail View Modal (Planned & Completed) -->
+            <!-- EDIT / DETAIL MODAL (New Inline Editing) -->
             <div id="detail-modal" onclick="event.stopPropagation()" class="modal-content" style="display: none;">
-                <h3 id="detail-title" style="font-size: 1.8rem; font-weight: 800; margin-bottom: 40px; color: var(--color-navy-accent);">Event Titel</h3>
-                
-                <div style="background-color: #f1f1f1; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
-                    <p style="font-size: 0.9rem; font-weight: 700; color: var(--color-text-dark); margin-bottom: 5px;">Details:</p>
-                    <p id="detail-description" style="color: var(--color-text-subtle); white-space: pre-wrap;">Beschreibung</p>
-                </div>
-                
-                <p style="font-size: 0.9rem; font-weight: 700; color: var(--color-text-dark); margin-bottom: 15px;">Status: <span id="detail-status" style="font-weight: 500; color: var(--color-navy-accent);"></span></p>
-
-                <div id="detail-action-container" style="margin-top: 20px;">
-                    <!-- Actions will be inserted here -->
-                </div>
-            </div>
-
-
-            <!-- 3. Image Zoom Modal (Vollbild) -->
-            <div id="image-zoom-modal" onclick="window.closeModal()" style="display: none;">
-                <img id="zoomed-image" src="" alt="Gezoomtes Bild">
-                <button type="button" onclick="window.closeModal()" class="close-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-            </div>
-
-
-            <!-- 4. Delete Confirmation Modal -->
-            <div id="delete-modal" onclick="event.stopPropagation()" class="modal-content" style="display: none; max-width: 300px; text-align: center;">
-                <input type="hidden" id="delete-id">
-                <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 10px;">Event löschen?</h3>
-                <p style="color: var(--color-text-subtle); margin-bottom: 25px;">Diese Aktion kann nicht rückgängig gemacht werden.</p>
-                <div style="display: flex; justify-content: space-between; gap: 10px;">
-                    <button type="button" onclick="window.closeModal()" class="btn btn-secondary" style="flex: 1;">
-                        Abbrechen
-                    </button>
-                    <button id="confirm-delete" type="button" onclick="window.confirmDelete()" class="btn btn-danger" style="flex: 1;">
-                        Löschen
-                    </button>
-                </div>
-            </div>
-
-<!-- Complete Event & Image Upload Modal -->
-<div id="complete-modal" onclick="event.stopPropagation()" class="modal-content" style="display: none;">
-    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; color: var(--color-navy-accent);">Event abschließen</h3>
-
-    <form id="complete-form" style="width: 100%;">
-        <input type="hidden" id="complete-id">
-
-        <!-- Upload Preview Container (clickable label) -->
-        <label for="complete-image-input" id="complete-image-preview"
-               style="cursor: pointer; color: var(--color-text-subtle); margin-bottom: 15px; font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; border: 2px dashed #dcdcdc; border-radius: 12px; text-align: center;">
-            <img id="preview-image" src="" alt="" style="display: none; max-width: 100%; max-height: 200px; margin-bottom: 10px; border-radius: 10px;" />
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-text-subtle); margin-bottom: 5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-            <span id="upload-hint">Foto hinzufügen (Optional)</span>
-        </label>
-
-        <!-- Hidden file input -->
-        <input id="complete-image-input" type="file" accept="image/*" style="display: none;" />
-
-        <button type="submit" class="btn btn-primary btn-success" style="width: 100%; margin-top: 15px;">
-            Als Erledigt markieren
-        </button>
-        <button type="button" onclick="window.closeModal()" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">
-            Abbrechen
-        </button>
-    </form>
-</div>
-
-            
-            <!-- 6. Edit Profile Modal -->
-            <div id="edit-profile-modal" onclick="event.stopPropagation()" class="modal-content" style="display: none; max-width: 300px;">
-                <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; color: var(--color-navy-accent); text-align: center;">Name bearbeiten</h3>
-                <form id="edit-profile-form" style="width: 100%;">
-                    <div class="form-group">
-                        <input id="profile-edit-name" type="text" placeholder="Neuer Anzeigename" required class="input-field">
+                <form id="edit-form">
+                    <input type="hidden" id="edit-id">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="margin: 0;">Bearbeiten</h3>
+                        <div style="display: flex; gap: 5px;">
+                            <button type="button" onclick="window.triggerDelete()" class="btn" style="padding: 8px; color: var(--color-danger); background: rgba(239,68,68,0.1);"><i data-lucide="trash-2" width="18"></i></button>
+                            <button type="button" onclick="window.triggerComplete()" class="btn" style="padding: 8px; color: var(--color-success); background: rgba(16, 185, 129, 0.1);"><i data-lucide="check" width="18"></i></button>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
-                        Speichern
-                    </button>
-                    <button type="button" onclick="window.closeModal()" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">
-                        Abbrechen
-                    </button>
+
+                    <div class="form-group">
+                        <input id="edit-title" type="text" class="input-field" style="font-weight: 700; font-size: 1.1rem; background: transparent; padding-left: 0; border-bottom: 1px solid #ddd; border-radius: 0;" placeholder="Titel">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Kategorie</label>
+                        <select id="edit-category" class="select-input"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notizen</label>
+                        <textarea id="edit-desc" class="textarea-field" style="min-height: 150px; background: #fafafa; border: 1px solid #eee;"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Änderungen speichern</button>
                 </form>
             </div>
 
+            <!-- MEMORY SWIPE WRAPPER -->
+            <div id="memory-modal-container" class="memory-modal-wrapper" onclick="event.stopPropagation()" style="display: none;">
+                <button id="arrow-left" class="nav-arrow left" onclick="window.prevMemory(event)"><i data-lucide="chevron-left"></i></button>
+                <div class="memory-card">
+                    <div id="memory-image-container" class="memory-image-container"></div>
+                    <div class="memory-details">
+                        <div id="memory-date" class="memory-date">DATUM</div>
+                        <h3 id="memory-title" class="memory-title">TITEL</h3>
+                        <div id="memory-desc" class="memory-desc">Beschreibung...</div>
+                    </div>
+                </div>
+                <button id="arrow-right" class="nav-arrow right" onclick="window.nextMemory(event)"><i data-lucide="chevron-right"></i></button>
+            </div>
+
+            <!-- OTHER MODALS -->
+            <div id="delete-modal" onclick="event.stopPropagation()" class="modal-content" style="display: none; text-align: center;">
+                <input type="hidden" id="delete-id">
+                <h3>Sicher?</h3>
+                <p style="color: var(--color-text-muted);">Das Date wird unwiderruflich gelöscht.</p>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button onclick="window.closeModal()" class="btn btn-secondary" style="flex: 1;">Abbrechen</button>
+                    <button onclick="window.confirmDelete()" class="btn btn-danger" style="flex: 1;">Löschen</button>
+                </div>
+            </div>
+
+            <div id="complete-modal" onclick="event.stopPropagation()" class="modal-content" style="display: none;">
+                <h3 style="text-align: center;">Memory erstellen</h3>
+                <form id="complete-form">
+                    <input type="hidden" id="complete-id">
+                    <label for="complete-image-input" id="complete-image-preview" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 140px; border: 2px dashed #ddd; border-radius: 12px; cursor: pointer; text-align: center; margin-bottom: 20px; color: #888; overflow: hidden;">
+                        <i data-lucide="camera" style="margin-bottom: 5px;"></i>
+                        <span>Foto hochladen (Optional)</span>
+                    </label>
+                    <input id="complete-image-input" type="file" accept="image/*" style="display: none;">
+                    <button type="submit" class="btn btn-primary" style="background-color: var(--color-success); width: 100%;">Abschließen</button>
+                </form>
+            </div>
+            
+            <div id="edit-profile-modal" onclick="event.stopPropagation()" class="modal-content" style="display: none;">
+                <h3>Name ändern</h3>
+                <form id="edit-profile-form">
+                    <div class="form-group"><input id="profile-edit-name" type="text" placeholder="Name" required class="input-field"></div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Speichern</button>
+                </form>
+            </div>
         </div>
     </div>
 </body>
